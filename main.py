@@ -1,5 +1,6 @@
 
 import os 
+import re
 import traceback
 import json, time
 from dotenv import load_dotenv
@@ -23,7 +24,27 @@ app.add_middleware(
 )
 
 
-######## CHAT COMPLETIONS ################
+######## CHAT COMPLETIONS ################    
+
+def tinhbmi(user_input):
+    # Sử dụng regex để lấy chiều cao và cân nặng
+    height_match = re.search(r'cao (\d+) cm', user_input)
+    weight_match = re.search(r'(\d+) kg', user_input)
+
+    result = None
+
+    if height_match and weight_match:
+        height = int(height_match.group(1)) / 100  # Chuyển đổi chiều cao từ cm sang m
+        weight = int(weight_match.group(1))
+
+        # Tính chỉ số BMI
+        bmi = weight / (height ** 2)
+        result = f"Chỉ số BMI của tôi là: {bmi:.2f}"
+
+    if result:
+        return result
+    else:
+        return None
 
 # for streaming
 def data_generator(response):
@@ -36,9 +57,18 @@ def data_generator(response):
 async def completion(request: Request):
     data = await request.json()
     print(f"received request data: {data}")
-    set_env_variables(data)
-    data = msg_handler(data)
-    response_agent = ResponseAgent(config=data)
+
+    user_input = data
+    result = tinhbmi(user_input)
+
+    if result:
+        data = result
+    else:
+        set_env_variables(data)
+        data = msg_handler(data)
+        response_agent = ResponseAgent(config=data)
+
+
     # handle how users send streaming
     if 'stream' in data:
         if type(data['stream']) == str: # if users send stream as str convert to bool

@@ -28,8 +28,13 @@ app.add_middleware(
 
 def tinhbmi(user_input):
     # Sử dụng regex để lấy chiều cao và cân nặng
-    height_match = re.search(r'cao (\d+) cm', user_input)
-    weight_match = re.search(r'(\d+) kg', user_input)
+    user_content = None
+    for message in user_input['messages']:
+        if message['role'] == 'user':
+            user_content = message['content']
+
+    height_match = re.search(r'cao (\d+) cm', user_content)
+    weight_match = re.search(r'(\d+) kg', user_content)
 
     result = None
 
@@ -40,6 +45,8 @@ def tinhbmi(user_input):
         # Tính chỉ số BMI
         bmi = weight / (height ** 2)
         result = f"Chỉ số BMI của tôi là: {bmi:.2f}"
+
+    print(f"i am user content: {result}")
 
     if result:
         return result
@@ -62,7 +69,7 @@ async def completion(request: Request):
     result = tinhbmi(user_input)
 
     if result:
-        data = result
+        response_agent = ResponseAgent(config=result)
     else:
         set_env_variables(data)
         data = msg_handler(data)
